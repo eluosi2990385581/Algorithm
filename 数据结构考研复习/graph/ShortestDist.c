@@ -50,17 +50,18 @@ int main()
 }
 
 
-void ShortestDist( MGraph Graph, int dist[], int count[], Vertex S )
+void ShortestDist( MGraph Graph, int dist[], int path[], Vertex S )
 {
     bool isvisit[MaxVertexNum]={false};
     dist[S]=0;
-    count[S]=1;
+    path[S]=-1;
+    int path_length[MaxVertexNum]={0};
     for(Vertex i=0;i<Graph->Nv;i++)
     {
         if(i!=S)
         {
-            dist[i]=INFINITY;
-            count[i]=0;
+            dist[i]=Graph->G[S][i];
+            path[i]=S;
         }
         
     }
@@ -78,8 +79,9 @@ void ShortestDist( MGraph Graph, int dist[], int count[], Vertex S )
                     v=i;
                 }
         
-        isvisit[v]=true;
+        
         if(v==-1)break;
+        isvisit[v]=true;
         
         for(Vertex i=0;i<Graph->Nv;i++)
         {
@@ -88,10 +90,18 @@ void ShortestDist( MGraph Graph, int dist[], int count[], Vertex S )
                 if(dist[i] > Graph->G[v][i] + dist[v])
                 {
                     dist[i]=Graph->G[v][i]+dist[v];
-                    count[i]=count[v];
+                    path[i]=v;
+                    path_length[i]=path_length[v]+1;
                 }
                 else if(dist[i]==Graph->G[v][i] + dist[v])
-                    count[i]+=count[v];
+                {
+                    if(path_length[i]>path_length[v]+1)
+                    {
+                        path[i]=v;
+                        path_length[i]=path_length[v]+1;
+                    }
+                }
+                    
             }
         }
     }
@@ -99,7 +109,46 @@ void ShortestDist( MGraph Graph, int dist[], int count[], Vertex S )
         if(dist[i]==INFINITY)
         {
             dist[i]=-1;
-            count[i]=0;
+            path[i]=-1;
         }
 }
 
+void ShortestDist( MGraph Graph, int dist[], int count[], Vertex S )
+{
+    bool visit[MaxVertexNum]={false};
+    
+    
+    
+    //数组模拟队列，BST方法遍历图找出不连通点
+    int queue1[MaxVertexNum]={-1};
+    int tail=-1,front=-1;
+    int temp=S;
+    
+    queue1[++tail]=S;
+    while(tail!=front)
+    {
+        temp=queue1[++front];
+        for(int i=0;i<Graph->Nv;i++)
+        {
+            if(visit[i]!=true && Graph->G[temp][i]!=INFINITY)
+            {
+                visit[i]=true;
+                queue1[++tail]=i;
+            }
+        }
+    }
+    
+    //BST遍历完之后尚未访问的点即为与S无路径的点
+    for(int i=0;i<Graph->Nv;i++)
+    {
+        if(visit[i]==false)
+        {
+            dist[i]=-1;
+            count[i]=0;
+        }
+    }
+    
+    //Dijkstra算法，求最短路径
+    
+    
+}
