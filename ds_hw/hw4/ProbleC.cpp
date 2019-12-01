@@ -1,39 +1,98 @@
 #include<iostream>
-#include<vector>
+
 using namespace std;
+#define base 26
+typedef unsigned long long _type;
+_type str1[100000];
+_type length=0;
 
-#define Maxnum 301;
-int hash_arr[Maxnum];//这里键为0～Maxnum，值为开始输入的数值
-
-void init_arr(int p);
-int hash_collsion(int p,int n);
+_type _hash(_type x);
+_type _gcd(_type x,_type y);
+void next_str(_type value);
+void _output();
 
 int main()
 {
-    
-    int p,n;
-    cin>>p>>n;
-    init_arr(p);
-    cout<<hash_collsion(p,n)<<endl;
-    
+    str1[0]=1;
+    _type n,x,temp;
+    cin>>n;
+    for(int i=0;i<n;i++)
+    {
+        cin>>x;
+        temp=_hash(x);
+        
+        if(!temp)
+        {
+            next_str(1);
+            continue;
+        }
+        else
+        {
+            temp=x/_gcd(temp,x);
+            next_str(temp);
+            continue;
+        }
+    }
+    _output();
     return 0;
 }
 
-void init_arr(int p)
+
+_type _hash(_type x)
 {
-    for(int i=0;i<p;i++)
-        hash_arr[i]=-1;
+    _type hash=0;
+    for(_type i=length;i>=0;i--)
+    {
+        hash=(hash*base+str1[i])%x;
+    }
+    return hash;
 }
 
-int hash_collsion(int p,int n)
+//_type _gcd(_type x,_type y)
+//{
+//    if(y==0)return x;
+//    return _gcd(y,x%y);
+//}
+_type _gcd(_type x,_type y)
 {
-    long num,fnum;
-    for(int i=0;i<n;i++)
+    while(y)
     {
-        cin>>num;
-        fnum=num%p;
-        if(hash_arr[fnum]>=0)return i;
-        hash_arr[fnum]=1;
+        _type temp=x%y;
+        x=y;
+        y=temp;
     }
-    return -1;
+    return x;
 }
+
+void next_str(_type value)
+{
+    for(int i=0;i<=length;i++)
+        str1[i]*=value;
+    for(int i=0;i<=length;i++){
+        if (str1[i]>=base){
+            str1[i+1]+=str1[i]/base;
+            str1[i]%=base;
+        }
+    }
+    while(str1[length+1]){
+        length++;
+        if (str1[length]>=base){
+            str1[length+1]+=str1[length]/base;
+            str1[length]%=base;
+        }
+    }
+}
+
+void _output()
+{
+    char str;
+    for(int i=0;i<=length;i++)cout<<'a';
+    cout<<endl;
+    for(_type i=length;i>=0;i--)
+    {
+        str=str1[i]+'a';
+        cout<<str;
+    }
+    cout<<endl;
+}
+
