@@ -1,0 +1,319 @@
+\documentclass{article}
+\usepackage{ctex}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage{fontspec} % 定制字体
+\newfontfamily\menlo{Menlo}
+\usepackage{xcolor} % 定制颜色
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+\lstset{ %
+numbers=left,
+backgroundcolor=\color{white},      % choose the background color
+basicstyle=\footnotesize\ttfamily,  % size of fonts used for the code
+columns=fullflexible,
+tabsize=4,
+breaklines=true,               % automatic line breaking only at whitespace
+captionpos=b,                  % sets the caption-position to bottom
+commentstyle=\color{mygreen},  % comment style
+escapeinside={\%*}{*)},        % if you want to add LaTeX within your code
+keywordstyle=\color{blue},     % keyword style
+stringstyle=\color{mymauve}\ttfamily,  % string literal style
+frame=single,
+rulesepcolor=\color{red!20!green!20!blue!20},
+% identifierstyle=\color{red},
+language=c++,
+}
+\title{基于红黑树的区间搜索扩展数据结构}
+{}\author{吴杰 3180106238}
+\date{\today}
+\begin{document}
+\maketitle
+%\tableofcontents
+
+\section{扩展思路}
+
+\subsection{}
+选取区间新增树的属性：low，high，max，low为BST树key值.
+
+\subsection{}
+结点属性max作为扩展信息，max为该所属结点为根的子树中包含的全部子树的区间的并中能包含的最大数值，即\[x\to max = max\{x\to left \to max,x\to right \to max ,x\to high\}\]
+
+\subsection{}
+修改insert中的max属性因改动带来的影响
+修改左旋、右旋对max属性因改动带来的影响.
+
+\subsection{}
+区间搜索树的功能实现.
+
+\subsection{}
+BinaryTreeNode<type> 对区间的初始化.
+
+\section{具体实现}
+\subsection{}
+\paragraph{文件：行数}
+BinaryTreeNode.h          31
+\paragraph{实现功能}
+增加新的属性：low，high，max，并以low作为key（data）值.
+\lstset{language=C++}
+\begin{lstlisting}
+class BinaryTreeNode
+{
+public:
+    //new_______________________________________________________________
+    
+    TYPE low;
+    TYPE high;
+    TYPE max;
+    int flag=1;
+    
+    //new -end_______________________________________________________________
+    TYPE data;		                /**< Satellite data, which is
+					 * also a key value. */
+    BinaryTreeNode *left;		/**< Left child. */
+    BinaryTreeNode *right;	        /**< Right child. */
+    BinaryTreeNode *parent;	        /**< Parent.  */
+    int depth;		                /**< Depth of the node. */
+    int pos;		                /**< Location in the current
+					 * layer in the full binary
+					 * tree (including the vacant
+					 * node).*/
+    bool color = RED;
+}
+\end{lstlisting}
+
+
+\subsection{}
+\paragraph{文件：行数}
+BinaryTree.templates.h     34
+\paragraph{实现功能}
+增加新的构造函数，输入区间端点值来构造树
+以low值为key
+增加max，low，high属性.
+增加区间树定义，新的构造函数，用于输入区间初始化一个节点.
+\begin{lstlisting}
+template <class TYPE>
+BinaryTree<TYPE>::BinaryTree(TYPE low,TYPE high)
+{
+    nil = new Node;
+    nil->color = BLACK;
+    Node *r = new Node;
+    r->low=low;
+    r->high=high;
+    r->max=high;
+    r->data = low;
+    r->left = nil;
+    r->right = nil;
+    r->parent = nil;
+    root = r;
+};
+\end{lstlisting}
+
+
+\subsection{}
+\paragraph{文件：行数}
+BinarySearchTree.templates.h		352
+\paragraph{实现功能}
+Insert（node *）增加修改max属性的操作.
+\begin{lstlisting}
+template <class TYPE>
+int BinarySearchTree<TYPE>::insert(Node *_new)
+{
+    Node *y = this->nil;
+    Node *x = this->root;
+    // Make sure that _new is a single node binary tree.
+    _new->left = _new->right = this->nil;
+    while (x != this->nil)
+    {
+        //new_______________________________________________________________
+        x->max=_new->high>x->max?_new->high:x->max;
+        //new -end_______________________________________________________________
+	y = x;
+	// The nodes less than to the left, then these greater than or
+	// equal to to the right.
+	if (_new->data < x->data)
+	    x = x->left;
+	else
+	    x = x->right;
+    }
+    _new->parent = y;
+    if (y == this->nil)
+	this->root = _new;
+    // Here the decision rule has to same as above.
+    else if (_new->data < y->data)
+	y->left = _new;
+    else
+	y->right = _new;
+    return 0;
+};
+\end{lstlisting}
+
+\subsection{}
+\paragraph{文件：行数}
+BinaryTree.templates.h 			424 \&\& 456
+\paragraph{实现功能}
+修改红黑树左旋右旋的操作，保证节点的max在动态操作中保持正确性.
+\begin{lstlisting}
+int BinaryTree<TYPE>::RightRotate(Node *_x)
+{
+    Node *y = _x->left;
+    _x->left = y->right;
+    if (y->right != nil)
+	y->right->parent = _x;
+    y->parent = _x->parent;
+    if (_x->parent == nil)
+	root = y;
+    // if _x is _x's parent's left child,
+    else if (_x == _x->parent->left)
+	// set y as _x's parent's left child.
+	_x->parent->left = y;
+    else
+	_x->parent->right = y;
+    y->right = _x;
+    _x->parent = y;
+    
+    
+    //new_______________________________________________________________
+    int max1=y->high,max2=_x->high;
+    if(_x->left)max2=max(max2,_x->left->max);
+    if(_x->right)max2=max(max2,_x->right->max);
+    _x->max=max2;
+    
+    if(y->left)max1=max(max1,y->left->max);
+    max1=max(max1,_x->max);
+    y->max=max1;
+    
+    //new -end_______________________________________________________________
+};
+\end{lstlisting}
+
+\begin{lstlisting}
+template <class TYPE>
+int BinaryTree<TYPE>::LeftRotate(Node *_x)
+{
+    Node *y = _x->right;
+    _x->right = y->left;
+    if (y->left != nil)
+	y->left->parent = _x;
+    y->parent = _x->parent;
+    if (_x->parent == nil)
+	root = y;
+    // if _x is _x's parent's left child,
+    else if (_x == _x->parent->left)
+	// set y as _x's parent's left child.
+	_x->parent->left = y;
+    else
+	_x->parent->right = y;
+    y->left = _x;
+    _x->parent = y;
+    
+    //new_______________________________________________________________
+    int max1=y->high,max2=_x->high;
+    if(_x->left)max2=max(max2,_x->left->max);
+    if(_x->right)max2=max(max2,_x->right->max);
+    _x->max=max2;
+    
+    if(y->right)max1=max(max1,y->right->max);
+    max1=max(max1,_x->max);
+    y->max=max1;
+    
+    //new -end_______________________________________________________________
+};
+\end{lstlisting}
+
+\subsection{}
+\paragraph{文件：行数}
+RedBlackTree.h		85
+\paragraph{实现功能}
+增加查找重叠区间树的函数.
+\begin{lstlisting}
+Node *IntervalTreeSearch(Node *source)
+    {
+           Node *t=this->root;
+           while(t && (t->high<source->low || source->high<t->low))
+           {
+               if(t->left && t->left->max>=source->low)
+                   t=t->left;
+               else
+                   t=t->right;
+           }
+           return t;
+       }
+\end{lstlisting}
+
+
+
+\section{程序测试}
+\subsection{编译连接}
+利用Makefile进行编译连接，在终端文件夹位置输入make即可编译连接，随后./main运行程序实现相应功能.
+\paragraph{Makefile文件}:
+\begin{lstlisting}
+source = $(wildcard *.cpp)
+object = $(patsubst %.cpp, %.o, $(source))
+
+main: $(object)
+        g++ -o $@ $(object)
+
+%.o : %.cpp
+        g++ -c $<
+
+debug: $(source)
+        g++ -o main $(source) -g
+
+clean:
+        rm *.o main test *.exe html latex -fr
+\end{lstlisting}
+
+\subsection{测试格式}
+\paragraph{输入格式}
+第一行输入三个数:n,low,high.low和high为所需要查找的区间的端点值，随后输入n行数据，每一行有两个数，为区间树的每个节点的区间端点值.
+\paragraph{输出格式}
+打印一颗红黑树，随后输出所查找到的区间树节点的区间端点值，若无该值，则输出'None'.
+\paragraph{测试样例}
+在test\_cases.dat中有三组测试样例以及相应的结果。
+
+\subsection{测试结果}
+\paragraph{Case1}：\footnote{这里的输出没有显示树的直观表示，而程序中输出存在树的直观显示}
+\begin{lstlisting}
+input:
+5 3 5
+1 2
+3 4
+6 7
+8 9
+10 14
+output:
+3 4
+\end{lstlisting}
+
+\paragraph{Case2}：
+\begin{lstlisting}
+input:
+6 14 16
+4 8
+5 11
+7 10
+17 19
+15 18
+21 23
+output:
+15 18
+\end{lstlisting}
+
+\paragraph{Case3}：
+\begin{lstlisting}
+input:
+6 12 14
+4 8
+5 11
+7 10
+17 19
+15 18
+21 23
+output:
+None
+\end{lstlisting}
+
+\end{document}
