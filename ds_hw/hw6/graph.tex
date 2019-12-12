@@ -1,0 +1,177 @@
+\documentclass{article}
+\usepackage{ctex}
+\usepackage{tikz}  
+\usetikzlibrary{arrows,shapes,chains} 
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage{fontspec} % 定制字体
+\newfontfamily\menlo{Menlo}
+\usepackage{xcolor} % 定制颜色
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+\lstset{ %
+numbers=left,
+backgroundcolor=\color{white},      % choose the background color
+basicstyle=\footnotesize\ttfamily,  % size of fonts used for the code
+columns=fullflexible,
+tabsize=4,
+breaklines=true,               % automatic line breaking only at whitespace
+captionpos=b,                  % sets the caption-position to bottom
+commentstyle=\color{mygreen},  % comment style
+escapeinside={\%*}{*)},        % if you want to add LaTeX within your code
+keywordstyle=\color{blue},     % keyword style
+stringstyle=\color{mymauve}\ttfamily,  % string literal style
+frame=single,
+rulesepcolor=\color{red!20!green!20!blue!20},
+% identifierstyle=\color{red},
+language=c++,
+}
+\title{图类库的设计}
+{}\author{吴杰 3180106238}
+\date{\today}
+\begin{document}
+\maketitle
+
+\section{组织结构}
+\subsection{文件的组织结构}
+编写一个Graph类库，用两个文件进行内容管理：
+\begin{itemize}
+	\item Graph.h
+	\item Graph.cpp
+\end{itemize}
+
+\subsection{Graph的基本属性}
+\begin{itemize}
+	\item 边的数目
+	\item 点的数目
+	\item 是否有向
+	\item 是否有权重
+	\item 使用的存储方法
+	\item 点的信息
+	\item 边的信息
+\end{itemize}
+
+\subsection{Graph的存储方式}
+\begin{itemize}
+	\item 邻接矩阵
+	\item 邻接表
+\end{itemize}
+
+\subsection{Graph的成员方法}
+\begin{itemize}
+	\item Graph的Vertex遍历\footnote{有些方法利用重载来实现不同存储方式的算法}
+	\item Graph的Edge遍历
+	\item 删除操作
+	\item 插入操作
+	\item 修改操作
+	\item 最小生成树
+\end{itemize}
+
+\subsection{难点及重点}
+\begin{itemize}
+	\item 图存储的动态内存分配
+	\item 根据用户需求选取的不同存储结构及其不同结构对图的操作
+	\item 图动态操作的内存动态分配
+	\item 成员方法算法时间空间效率的开销
+\end{itemize}
+
+\section{类库的设计流程}
+	\begin{center}  
+		\scriptsize  
+		\tikzstyle{format}=[rectangle,draw,thin,fill=white]  
+		%定义语句块的颜色,形状和边
+		\tikzstyle{test}=[diamond,aspect=2,draw,thin]  
+		%定义条件块的形状,颜色
+		\tikzstyle{point}=[coordinate,on grid,]  
+		%像素点,用于连接转移线
+
+		\begin{tikzpicture}
+			\node[format] (start){Graph类库设计};
+		\node[format,below of=start,node distance=12mm,align=center] (define){Graph.h定义图的\\基本属性\\成员方法};
+		\node[format,right of=define,node distance=40mm,align=center] (inst)
+		{利用c++函数重载来处理不同情况\\例如:\\del(Vertex,AdjcentList)\\del(Vertex,AdjcentMartix)};
+		\node[format,below of=define,node distance=15mm,align=center] (PCFinit){Graph.cpp实现图的\\基本操作\\扩展算法};
+		\node[format,below of=PCFinit,node distance=12mm] (DS18init){用户需求};
+		\node[format,below of=DS18init,node distance=7mm] (LCDinit){更新bool directed属性};
+		\node[format,below of=LCDinit,node distance=7mm] (processtime){用户需求};
+		\node[format,below of=processtime,node distance=7mm] (keyinit){更新bool AdjcentList属性};
+		\node[test,below of=keyinit,node distance=15mm](setkeycheck){if directed==True };
+		\node[point,left of=setkeycheck,node distance=18mm](point3){};
+		\node[test,below of=setkeycheck,node distance=20mm](readtime){if AdjcentList==True};
+		\node[format,left of=readtime,node distance=40mm](line1){设置邻接矩阵存储};
+		\node[format,below of=line1,node distance=20mm](line1-1){设置为无向图};
+		\node[point,right of=readtime,node distance=20mm](point4){};
+		\node[format,below of=readtime,node distance=20mm](processtime1){设置邻接表存储};
+		\node[format,below of=processtime1](gettemp){设置为无向图};
+		%\node[format,below of=gettemp](display){Display All Data};
+		\node[test,right of=setkeycheck,node distance=40mm](setsetflag){if AdjcentList==True};
+		\node[format,right of=setsetflag,node distance=40mm](line4){设置为有向图};
+		\node[point,right of=line4,node distance=15mm](temppoint){};
+		\node[format,below of=line4,node distance=20mm](line4-1){设置邻接矩阵存储};
+		\node[format,below of=setsetflag,node distance=20mm](setinit){设置为邻接表存储};
+		\node[format,below of=setinit](checksetting){设置为有向图};
+		\node[test,below of=checksetting,node distance=15mm](savecheck){是否需要更新需求};
+		\node[format,below of=savecheck,node distance=15mm](clearsetflag){调用方法实现相应功能};
+		\node[format,right of=clearsetflag,node distance=40mm,align=center](instr)
+		{这里实现了\\Graph的Vertex遍历\\Graph的Edge遍历\\删除操作\\插入操作\\修改操作\\最小生成树算法};
+		\node[format,below of=clearsetflag](settime){End};
+		%\node[point,below of=display,node distance=7mm](point1){};
+		\node[point,below of=gettemp,node distance=7mm](pointx){};
+		\node[point,below of=settime,node distance=7mm](point2){};
+		%\node[format] (n0) at(4,4){A}; 直接指定位置 
+		%定义完node之后进行连线,
+		%\draw[->] (n0.south) -- (n1); 带箭头实线
+		%\draw[-] (n0.south) -- (n1); 不带箭头实线
+		%\draw[<->] (n0.south) -- (n1.north);   双箭头
+		%\draw[<-,dashed] (n1.south) -- (n2.north); 带箭头虚线 
+		%\draw[<-] (n0.south) to node{Yes} (n1.north);  带字,字在箭头方向右边
+		%\draw[->] (n1.north) to node{Yes} (n0.south);  带字,字在箭头方向左边
+		%\draw[->] (n1.north) to[out=60,in=300] node{Yes} (n0.south);  曲线
+		%\draw[->,draw=red](n2)--(n1);  带颜色的线
+		\draw[->] (start)--(define);
+		\draw[->] (define)--(PCFinit);
+		\draw[-] (define)--(inst);
+		\draw[->](PCFinit)--(DS18init);
+		\draw[->](DS18init)--(LCDinit);
+		\draw[->](LCDinit)--(processtime);
+		\draw[->](processtime)--(keyinit);
+		\draw[->](keyinit)--(setkeycheck);
+		\draw[->](setkeycheck)--node[above]{Yes}(setsetflag);
+		\draw[->](setkeycheck) --node[left]{No} (readtime);
+		\draw[->](readtime)--node[left]{Yes}(processtime1);
+		\draw[->](readtime)--node[above]{No}(line1);
+		\draw[->](line1)--(line1-1);
+		\draw[->](processtime1)--(gettemp);
+		\draw[-](gettemp)--(pointx);
+		\draw[->](pointx)-|(savecheck.west);
+		%\draw[-](display)--(point1);%\draw[-](point1)-|(point3);
+		\draw[-](line1-1)|-(pointx);
+		\draw[->](line4)--(line4-1);
+		\draw[->](line4-1)|-(savecheck.north);
+		%\draw[->](point3)--(setkeycheck.west);
+		\draw[->](setsetflag)--node[left]{Yes}(setinit);
+		\draw[->](setsetflag)--node[above]{No}(line4);
+		\draw[->](setinit)--(checksetting);
+		\draw[->](checksetting)--(savecheck);
+		\draw[->](savecheck)--node[left]{No}(clearsetflag);
+		\draw[-](savecheck.east)-|node[below]{Yes}(temppoint);
+		\draw[->](temppoint)|-(DS18init);
+		\draw[->](clearsetflag)--(settime);
+		\draw[-](clearsetflag)--(instr);
+		%\draw[-](settime)--(point2);
+		%\draw[-](point2)-|(point4);
+		%\draw[->](point4)--(readtime.east);
+		\end{tikzpicture}
+	\end{center}
+
+
+\section{属性方法的实现及其算法}
+
+\subsection{头文件的构建}
+
+\begin{lstlisting}
+\end{lstlisting}
+
+\end{document}
